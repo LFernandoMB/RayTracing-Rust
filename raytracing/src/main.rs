@@ -21,18 +21,24 @@ use crate::vec3::{Point3, Vec3};
 //use vec3::ColorVec;
 use crate::ray::Ray;
 
-fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> bool {
+fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
     let oc = r.origin() - *center;
     let a = Vec3::dot(r.direction(), r.direction());
     let b = 2.0 * Vec3::dot(oc, r.direction());
     let c = Vec3::dot(oc, oc) - radius * radius;
     let discriminant = b * b - 4.0 * a * c;
-    discriminant > 0.0
+    if discriminant < 0.0 {
+        return -1.0;
+    } else {
+        return (-b - discriminant.sqrt()) / (2.0 * a);
+    }
 }
 
 fn ray_color(r: &Ray) -> vec3::ColorVec {
-    if hit_sphere(&Point3::new_with_values(0.0, 0.0, -1.0), 0.5, r) {
-        return vec3::ColorVec::new_with_values(1.0, 0.0, 0.0);
+    let t: f64 = hit_sphere(&Point3::new_with_values(0.0, 0.0, -1.0), 0.5, r);
+    if (t > 0.0) {
+        let N = Vec3::unit_vector(r.at(t) - Vec3::new_with_values(0.0, 0.0, -1.0));
+        return 0.5 * vec3::ColorVec::new_with_values(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0);
     }
     let unit_direction = Vec3::unit_vector(r.direction());
     let t = 0.5 * (unit_direction.y() + 1.0);
