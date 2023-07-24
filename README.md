@@ -16,4 +16,8 @@ Second Image Generated
 
 ![second_img](https://github.com/LFernandoMB/RayTracing-Rust/assets/91624923/186a97d4-4f92-4dfe-84db-11a2be4bebb8)
 
+Third Image Generated
+![third_img](https://github.com/LFernandoMB/RayTracing-Rust/assets/91624923/e32e77e1-6b7f-4788-ac9e-a54644f056df)
+
+Continue
 ...
