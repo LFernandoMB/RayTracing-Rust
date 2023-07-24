@@ -9,17 +9,21 @@
 
 // Transposing challenge code from c++ to Rust
 
+use std::io::{self, Write};
+
 fn main() {
     // Creating the image dimensions - width = 256 and height = 256
     let image_width: i32 = 256;
     let image_height: i32 = 256;
 
     // Creating the Render
-    print!("P3");
-    print!("{} {}",image_width, image_height);
-    print!("255");
+    print!("P3\n");
+    print!("{} {}\n",image_width, image_height);
+    print!("255\n");
 
     for i in (0..image_height).rev() {
+        // Progress Indicator of the output
+        eprint!("\rScanlines remaining: {} ", i);
         for j in (0..image_width) {
             let r = f64::from(i) / f64::from(image_width-1);
             let g = f64::from(j) / f64::from(image_height-1);
@@ -32,6 +36,8 @@ fn main() {
             println!("{ir} {ig} {ib}");
         }
     }
+    // Process End Indicator
+    eprint!("\nDone!\n");
 }
 
 // To generate the image in ppm document: cargo run > first_img.ppm 
