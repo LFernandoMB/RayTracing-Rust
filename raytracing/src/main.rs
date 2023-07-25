@@ -10,9 +10,9 @@
 // Transposing challenge code from c++ to Rust
 
 // Indicate modules
-mod vec3;
 mod color;
 mod ray;
+mod vec3;
 
 //use std::io::{self, Write};
 //use color::write_color;
@@ -42,7 +42,8 @@ fn ray_color(r: &Ray) -> vec3::ColorVec {
     }
     let unit_direction = Vec3::unit_vector(r.direction());
     let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * vec3::ColorVec::new_with_values(1.0, 1.0, 1.0) + t * vec3::ColorVec::new_with_values(0.5, 0.7, 1.0)
+    (1.0 - t) * vec3::ColorVec::new_with_values(1.0, 1.0, 1.0)
+        + t * vec3::ColorVec::new_with_values(0.5, 0.7, 1.0)
 }
 
 fn main() -> std::io::Result<()> {
@@ -59,8 +60,9 @@ fn main() -> std::io::Result<()> {
     let origin = Point3::new_with_values(0.0, 0.0, 0.0);
     let horizontal = Vec3::new_with_values(viewport_width, 0.0, 0.0);
     let vertical = Vec3::new_with_values(0.0, viewport_height, 0.0);
-    let lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new_with_values(0.0, 0.0, focal_length);
-    
+    let lower_left_corner =
+        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new_with_values(0.0, 0.0, focal_length);
+
     // Render
     println!("P3");
     println!("{} {}", image_width, image_height);
@@ -71,7 +73,10 @@ fn main() -> std::io::Result<()> {
         for i in 0..image_width {
             let u = i as f64 / (image_width - 1) as f64;
             let v = j as f64 / (image_height - 1) as f64;
-            let r = Ray::new(origin, lower_left_corner + u * horizontal + v * vertical - origin);
+            let r = Ray::new(
+                origin,
+                lower_left_corner + u * horizontal + v * vertical - origin,
+            );
             let pixel_color = ray_color(&r);
             color::write_color(&mut std::io::stdout(), pixel_color)?;
         }

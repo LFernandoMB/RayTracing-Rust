@@ -1,5 +1,5 @@
 // Importing similar methods of "<cmath>"
-use std::ops::{Neg, Add, Mul, Div, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 //use std::io::{self, Write};
 
 #[derive(Debug, Clone, Copy)]
@@ -43,7 +43,9 @@ impl Neg for Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Vec3 {
-        Vec3 { e: [-self.e[0], -self.e[1], -self.e[2]] }
+        Vec3 {
+            e: [-self.e[0], -self.e[1], -self.e[2]],
+        }
     }
 }
 
@@ -51,7 +53,13 @@ impl Add for Vec3 {
     type Output = Vec3;
 
     fn add(self, other: Vec3) -> Vec3 {
-        Vec3 { e: [self.e[0] + other.e[0], self.e[1] + other.e[1], self.e[2] + other.e[2]] }
+        Vec3 {
+            e: [
+                self.e[0] + other.e[0],
+                self.e[1] + other.e[1],
+                self.e[2] + other.e[2],
+            ],
+        }
     }
 }
 
@@ -59,7 +67,11 @@ impl Sub<Vec3> for Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: Vec3) -> Vec3 {
-        Vec3::new_with_values(self.e[0] - other.e[0], self.e[1] - other.e[1], self.e[2] - other.e[2])
+        Vec3::new_with_values(
+            self.e[0] - other.e[0],
+            self.e[1] - other.e[1],
+            self.e[2] - other.e[2],
+        )
     }
 }
 
@@ -67,7 +79,11 @@ impl Mul<Vec3> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, other: Vec3) -> Vec3 {
-        Vec3::new_with_values(self.e[0] * other.e[0], self.e[1] * other.e[1], self.e[2] * other.e[2])
+        Vec3::new_with_values(
+            self.e[0] * other.e[0],
+            self.e[1] * other.e[1],
+            self.e[2] * other.e[2],
+        )
     }
 }
 
@@ -97,7 +113,7 @@ impl Div<f64> for Vec3 {
 
 // Type aliases for Vec3
 pub type Point3 = Vec3; // 3D point
-pub type ColorVec = Vec3;  // RGB color
+pub type ColorVec = Vec3; // RGB color
 
 // Utility functions
 impl Vec3 {
