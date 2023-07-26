@@ -8,80 +8,69 @@
 // URL (livro) : https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
 // Transposing challenge code from c++ to Rust
-
-// Indicate modules
-mod color;
+mod hittable;
+mod hittable_list;
+mod sphere;
 mod ray;
 mod vec3;
 
-//use std::io::{self, Write};
-//use color::write_color;
+use ray::Ray;
+use vec3::Vec3;
+use hittable::{HitRecord, Hittable};
+use hittable_list::HittableList;
+use sphere::Sphere;
 
-use crate::vec3::{Point3, Vec3};
-//use vec3::ColorVec;
-use crate::ray::Ray;
-
-fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
-    let oc = r.origin() - *center;
-    let a = Vec3::dot(r.direction(), r.direction());
-    let b = 2.0 * Vec3::dot(oc, r.direction());
-    let c = Vec3::dot(oc, oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
-    if discriminant < 0.0 {
-        return -1.0;
-    } else {
-        return (-b - discriminant.sqrt()) / (2.0 * a);
-    }
-}
-
-fn ray_color(r: &Ray) -> vec3::ColorVec {
-    let t: f64 = hit_sphere(&Point3::new_with_values(0.0, 0.0, -1.0), 0.5, r);
-    if (t > 0.0) {
-        let N = Vec3::unit_vector(r.at(t) - Vec3::new_with_values(0.0, 0.0, -1.0));
-        return 0.5 * vec3::ColorVec::new_with_values(N.x() + 1.0, N.y() + 1.0, N.z() + 1.0);
-    }
-    let unit_direction = Vec3::unit_vector(r.direction());
-    let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * vec3::ColorVec::new_with_values(1.0, 1.0, 1.0)
-        + t * vec3::ColorVec::new_with_values(0.5, 0.7, 1.0)
-}
-
-fn main() -> std::io::Result<()> {
-    // Image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width: i32 = 400;
-    let image_height: i32 = (image_width as f64 / aspect_ratio) as i32;
-
-    // Camera
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let focal_length = 1.0;
-
-    let origin = Point3::new_with_values(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new_with_values(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new_with_values(0.0, viewport_height, 0.0);
-    let lower_left_corner =
-        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new_with_values(0.0, 0.0, focal_length);
-
-    // Render
-    println!("P3");
-    println!("{} {}", image_width, image_height);
-    println!("255");
-
-    for j in (0..image_height).rev() {
-        eprint!("\rScanlines remaining: {} ", j);
-        for i in 0..image_width {
-            let u = i as f64 / (image_width - 1) as f64;
-            let v = j as f64 / (image_height - 1) as f64;
-            let r = Ray::new(
-                origin,
-                lower_left_corner + u * horizontal + v * vertical - origin,
+fn color(r: &Ray, world: &HittableList) -> Vec3 {
+    let mut rec = HitRecord::default();
+    if world.hit(&r, 0.0, std::f32::MAX, &mut rec) {
+        return 0.5 * Vec3::new(
+                rec.normal().x() + 1.0,
+                rec.normal().y() + 1.0,
+                rec.normal().z() + 1.0,
             );
-            let pixel_color = ray_color(&r);
-            color::write_color(&mut std::io::stdout(), pixel_color)?;
+    } else {
+        let unit_direction = Vec3::unit_vector(&r.direction());
+        let t = 0.5 * (unit_direction.y() + 1.0);
+
+        Vec3::new(1.0, 1.0, 1.0) * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
+    }
+}
+
+fn main() {
+    let w = 400;
+    let h = 200;
+    let max_value = 255;
+
+    let lower_left_corner = Vec3::new(-2.0, -1.0, -1.0);
+    let horizontal = Vec3::new(4.0, 0.0, 0.0);
+    let vertical = Vec3::new(0.0, 2.0, 0.0);
+    let origin = Vec3::new(0.0, 0.0, 0.0);
+
+    let mut list: Vec<Box<dyn Hittable>> = Vec::new();
+    list.push(Box::new(Sphere::sphere(Vec3::new(0.0, 0.0, -1.0), 0.5)));
+    list.push(Box::new(Sphere::sphere(
+        Vec3::new(0.0, -100.5, -1.0),
+        100.0,
+    )));
+    let world = HittableList::new(list);
+
+    // Head of ppm to start building images
+    println!("P3\n{} {}\n{}", w, h, max_value);
+
+    for j in (0..h).rev() {
+        for i in 0..w {
+            let u = i as f32 / w as f32;
+            let v = j as f32 / h as f32;
+
+            let r = Ray::ray(origin, lower_left_corner + horizontal * u + vertical * v);
+            let p = r.point_at_parameter(2.0);
+            let col = color(&r, &world);
+
+            let ir = (255.99 * col.r()) as i32;
+            let ig = (255.99 * col.g()) as i32;
+            let ib = (255.99 * col.b()) as i32;
+
+            println!("{} {} {}", ir, ig, ib);
         }
     }
-
-    eprint!("\nDone!\n");
-    Ok(())
 }
