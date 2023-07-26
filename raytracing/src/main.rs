@@ -81,7 +81,7 @@ fn main() {
         0.5,
         Material::Dielectric { ref_idx: 1.5 },
     )));
-    
+
     list.push(Box::new(Sphere::sphere(
         Vec3::new(-1.0, 0.0, -1.0),
         -0.45,
@@ -89,7 +89,15 @@ fn main() {
         )));
 
     let world = HittableList::new(list);
-    let cam = Camera::camera();
+
+    let cam = Camera::camera(
+        Vec3::new(-2.0, 2.0, 1.0),
+        Vec3::new(0.0, 0.0, -1.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        90.0,
+        width as f32 / height as f32,
+    );
+
     let mut rng = rand::thread_rng();
 
     // Head of ppm to start building images
