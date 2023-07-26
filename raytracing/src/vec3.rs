@@ -51,6 +51,16 @@ impl Vec3 {
     }
 }
 
+impl std::ops::Neg for Vec3 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Vec3 {
+            e: [-self.e[0], -self.e[1], -self.e[2]],
+        }
+    }
+}
+
 impl ops::Add for Vec3 {
     type Output = Self;
 
@@ -96,6 +106,20 @@ impl ops::Mul<f32> for Vec3 {
     fn mul(self, rhs: f32) -> Self::Output {
         Vec3 {
             e: [self.e[0] * rhs, self.e[1] * rhs, self.e[2] * rhs],
+        }
+    }
+}
+
+impl ops::Mul for Vec3 {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Vec3 {
+            e: [
+                self.e[0] * rhs.e[0],
+                self.e[1] * rhs.e[1],
+                self.e[2] * rhs.e[2],
+            ],
         }
     }
 }
