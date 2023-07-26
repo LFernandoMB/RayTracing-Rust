@@ -7,6 +7,8 @@
 // URL (série) : https://raytracing.github.io/
 // URL (livro) : https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
+
+
 // Transposing challenge code from c++ to Rust
 mod hittable;
 mod hittable_list;
@@ -24,6 +26,8 @@ use sphere::Sphere;
 use camera::Camera;
 use rand::prelude::*;
 use material::{scatter, Material};
+use std::time;
+use rayon::prelude::*;
 
 fn color(r: &Ray, world: &HittableList, depth: i32) -> Vec3 {
     if let Some(rec) = world.hit(&r, 0.001, std::f32::MAX) {
@@ -55,48 +59,78 @@ fn main() {
     let mut list: Vec<Box<dyn Hittable>> = Vec::new();
 
     list.push(Box::new(Sphere::sphere(
-        Vec3::new(0.0, 0.0, -1.0),
-        0.5,
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
         Material::Lambertian {
-            albedo: Vec3::new(0.1, 0.2, 0.5),
+            albedo: Vec3::new(0.5, 0.5, 0.5),
         },)));
-
-    list.push(Box::new(Sphere::sphere(
-        Vec3::new(0.0, -100.5, -1.0),
-        100.0,
-        Material::Lambertian {
-            albedo: Vec3::new(0.8, 0.8, 0.0),
-        },)));
-
-    list.push(Box::new(Sphere::sphere(
-        Vec3::new(1.0, 0.0, -1.0),
-        0.5,
-        Material::Metal {
-            albedo: Vec3::new(0.8, 0.6, 0.2),
-            fuzz: 0.3,
-        },)));
-
-    list.push(Box::new(Sphere::sphere(
-        Vec3::new(-1.0, 0.0, -1.0),
-        0.5,
-        Material::Dielectric { ref_idx: 1.5 },
-    )));
-
-    list.push(Box::new(Sphere::sphere(
-        Vec3::new(-1.0, 0.0, -1.0),
-        -0.45,
-        Material::Dielectric { ref_idx: 1.5 },
+        
+        let mut rng = rand::thread_rng();
+        for a in -11..11 {
+            for b in -11..11 {
+                let choose_mat = rng.gen::<f32>();
+                let centre = Vec3::new(
+                    a as f32 + 0.9 * rng.gen::<f32>(),
+                    0.2,
+                    b as f32 + 0.9 * rng.gen::<f32>(),
+                );
+    
+                if (centre - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                    if choose_mat < 0.8 {
+                        let albedo = Vec3::random() * Vec3::random();
+                        list.push(Box::new(Sphere::sphere(
+                            centre,
+                            0.2,
+                            Material::Lambertian { albedo },
+                        )));
+                    } else if choose_mat < 0.95 {
+                        let albedo = Vec3::random_init(0.5, 1.0);
+                        let fuzz = rng.gen_range(0.0, 0.5);
+                        list.push(Box::new(Sphere::sphere(
+                            centre,
+                            0.2,
+                            Material::Metal { albedo, fuzz },
+                        )));
+                    } else {
+                        list.push(Box::new(Sphere::sphere(
+                            centre,
+                            0.2,
+                            Material::Dielectric { ref_idx: 1.5 },
+                        )));
+                    }
+                }
+            }
+        }
+        list.push(Box::new(Sphere::sphere(
+            Vec3::new(0.0, 1.0, 0.0),
+            1.0,
+            Material::Dielectric { ref_idx: 1.5 },
         )));
+
+    list.push(Box::new(Sphere::sphere(
+        Vec3::new(-4.0, 1.0, 0.0),
+        1.0,
+        Material::Lambertian {
+            albedo: Vec3::new(0.4, 0.2, 0.1),
+        },)));
+
+    list.push(Box::new(Sphere::sphere(
+        Vec3::new(4.0, 1.0, 0.0),
+        1.0,
+        Material::Metal {
+            albedo: Vec3::new(0.7, 0.6, 0.5),
+            fuzz: 0.0,
+        },)));
 
     let world = HittableList::new(list);
 
     let aspect_ratio = width as f32 / height as f32;
-    let look_from = Vec3::new(3.0, 3.0, 2.0);
-    let look_at = Vec3::new(0.0, 0.0, -1.0);
+    let look_from = Vec3::new(13.0, 2.0, 3.0);
+    let look_at = Vec3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
 
-    let dist_to_focus = (look_from - look_at).length();
-    let apeture = 2.0;
+    let dist_to_focus = 10.0;
+    let apeture = 0.1;
 
     let cam = Camera::camera(
         look_from,
@@ -108,19 +142,28 @@ fn main() {
         dist_to_focus,
     );
 
-    let mut rng = rand::thread_rng();
-
     // Head of ppm to start building images
-    println!("P3\n{} {}\n{}", width, height, max_value);
+    // println!("P3\n{} {}\n{}", width, height, max_value);
 
-    for j in (0..height).rev() {
-        eprint!("\rScanlines remaining: {} ", j);
-        for i in 0..width {
+    let mut screen = vec![(0u32, 0u32, 0u32); width * height];
+
+    let start = time::Instant::now();
+
+    screen
+        // .iter_mut()
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(index, pixel)| {
+            let mut rng = rand::thread_rng();
+            let column = index % width; // column is the 'count' within a row
+            let row = height - index / width; // the row number
+
+            // println!("Row: {}, column: {}", row, column);
             let mut col = Vec3::default();
 
             for _ in 0..samples {
-                let u = (i as f32 + rng.gen::<f32>()) / width as f32;
-                let v = (j as f32 + rng.gen::<f32>()) / height as f32;
+                let u = (column as f32 + rng.gen::<f32>()) / width as f32;
+                let v = (row as f32 + rng.gen::<f32>()) / height as f32;
                 let r = &cam.get_ray(u, v);
                 col = col + color(&r, &world, 0);
             }
@@ -128,12 +171,24 @@ fn main() {
             col = col / samples as f32;
             col = Vec3::new(col.r().sqrt(), col.g().sqrt(), col.b().sqrt());
 
-            let ir = (255.99 * col.r()) as i32;
-            let ig = (255.99 * col.g()) as i32;
-            let ib = (255.99 * col.b()) as i32;
+            let ir = (255.99 * col.r()) as u32;
+            let ig = (255.99 * col.g()) as u32;
+            let ib = (255.99 * col.b()) as u32;
 
-            println!("{} {} {}", ir, ig, ib);
-        }
+            // no alpha, just 24 bit colour
+            *pixel = (ir, ig, ib);
+        });
+
+    eprintln!("Number of pixels generated: {}", screen.len());
+
+    // we use a plain txt ppm to start building images
+    println!("P3\n{} {}\n{}", width, height, max_value);
+
+    for (r, g, b) in screen {
+        println!("{} {} {}", r, g, b);
     }
+
     eprint!("\nDone!\n");
+    let duration = time::Instant::now() - start;
+    eprintln!("Render elapsed time: {:?}", duration);
 }
