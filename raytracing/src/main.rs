@@ -7,9 +7,9 @@
 // URL (série) : https://raytracing.github.io/
 // URL (livro) : https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
-
-
 // Transposing challenge code from c++ to Rust
+
+// Modules Indication
 mod hittable;
 mod hittable_list;
 mod sphere;
@@ -18,6 +18,7 @@ mod vec3;
 mod camera;
 mod material;
 
+// Modules Imports
 use ray::Ray;
 use vec3::Vec3;
 use hittable::Hittable;
@@ -29,6 +30,7 @@ use material::{scatter, Material};
 use std::time;
 use rayon::prelude::*;
 
+// Coloring Function
 fn color(r: &Ray, world: &HittableList, depth: i32) -> Vec3 {
     if let Some(rec) = world.hit(&r, 0.001, std::f32::MAX) {
         let mut scattered = Ray::ray(Vec3::default(), Vec3::default());
@@ -49,15 +51,17 @@ fn color(r: &Ray, world: &HittableList, depth: i32) -> Vec3 {
 
 
 fn main() {
+    // Image caracteristics especification
     // let w = 400;
     // let h = 200;
-    let width = 400;
-    let height = 200;
+    let width = 1600;
+    let height = 800;
     let samples = 100;
     let max_value = 255;
 
     let mut list: Vec<Box<dyn Hittable>> = Vec::new();
 
+    // Creation of the spheres, passing the Material as a description of the face
     list.push(Box::new(Sphere::sphere(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -146,9 +150,11 @@ fn main() {
     // println!("P3\n{} {}\n{}", width, height, max_value);
 
     let mut screen = vec![(0u32, 0u32, 0u32); width * height];
-
+    
+    // Getting the start time to use for calculating time
     let start = time::Instant::now();
 
+    // Initiating parallelism to gain speed (Rayon)
     screen
         // .iter_mut()
         .par_iter_mut()
@@ -175,20 +181,22 @@ fn main() {
             let ig = (255.99 * col.g()) as u32;
             let ib = (255.99 * col.b()) as u32;
 
-            // no alpha, just 24 bit colour
+            // No alpha, just 24 bits colors
             *pixel = (ir, ig, ib);
         });
 
-    eprintln!("Number of pixels generated: {}", screen.len());
+    // eprintln!("Number of pixels generated: {}", screen.len());
 
-    // we use a plain txt ppm to start building images
+    // PPM Header
     println!("P3\n{} {}\n{}", width, height, max_value);
 
+    // Image writer
     for (r, g, b) in screen {
         println!("{} {} {}", r, g, b);
     }
 
     eprint!("\nDone!\n");
+    // End of runtime - time display
     let duration = time::Instant::now() - start;
     eprintln!("Render elapsed time: {:?}", duration);
 }
